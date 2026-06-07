@@ -2,6 +2,18 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "broker-service"
+		},
+		{
+			"path": "authentication-service"
+		},
+		{
+			"path": "front-end"
+		},
+		{
+			"path": "project"
 		}
 	],
 	"settings": {}
