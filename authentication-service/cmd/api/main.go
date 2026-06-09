@@ -3,20 +3,20 @@ package main
 import (
 	"authentication/data"
 	"database/sql"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
-	"fmt"
-	"net/http"
 
-	_ "github.com/jackc/pgx/v4/stdlib"
-	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgconn"
+	_ "github.com/jackc/pgx/v4"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 const webPort = "80"
 
-var counts int64 
+var counts int64
 
 type Config struct {
 	DB *sql.DB
@@ -24,22 +24,22 @@ type Config struct {
 }
 
 func main() {
-	log.Printf("Starting API server on port %s", webPort)
+	log.Println("Starting authentication service")
 
-	// connect to database
+	// connect to DB
 	conn := connectToDB()
 	if conn == nil {
-		log.Panic("Could not connect to database")
+		log.Panic("Can't connect to Postgres!")
 	}
 
-	// set up the config
+	// set up config
 	app := Config{
-		DB:     conn,
+		DB: conn,
 		Models: data.New(conn),
 	}
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", webPort),
+		Addr: fmt.Sprintf(":%s", webPort),
 		Handler: app.routes(),
 	}
 
@@ -47,7 +47,6 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -55,15 +54,18 @@ func openDB(dsn string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	err = db.Ping()
 	if err != nil {
 		return nil, err
 	}
+
 	return db, nil
 }
 
-func connectToDB() (*sql.DB) {
+func connectToDB() *sql.DB {
 	dsn := os.Getenv("DSN")
+
 	for {
 		connection, err := openDB(dsn)
 		if err != nil {
@@ -73,12 +75,13 @@ func connectToDB() (*sql.DB) {
 			log.Println("Connected to Postgres!")
 			return connection
 		}
+
 		if counts > 10 {
-			log.Println("Max retries reached. Exiting...", err)
+			log.Println(err)
 			return nil
 		}
 
-		log.Println("Backing off for 2 seconds ...")
+		log.Println("Backing off for two seconds....")
 		time.Sleep(2 * time.Second)
 		continue
 	}
